@@ -521,6 +521,16 @@ ScopedAStatus DisplayConfigAIDL::setDSIClk(int32_t disp_id, int64_t bit_clk) {
 }
 
 ScopedAStatus DisplayConfigAIDL::setQsyncMode(int disp_id, QsyncMode mode) {
+  // OPlus carries its auto-ADFR request through this Binder method. It targets
+  // qsync_min_fps, not the standard qsync_mode enum/property.
+  if (static_cast<uint32_t>(mode) == sdm::kQSyncModeOplusAuto) {
+    auto ret = settings_->SetQsyncMode(disp_id, sdm::kQSyncModeOplusAuto);
+    if (ret != sdm::kErrorNone) {
+      return ScopedAStatus(AStatus_fromExceptionCode(EX_ILLEGAL_ARGUMENT));
+    }
+    return ScopedAStatus::ok();
+  }
+
   sdm::QSyncMode qsync_mode = sdm::kQSyncModeNone;
   switch (mode) {
     case QsyncMode::NONE:
